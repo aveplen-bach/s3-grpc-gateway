@@ -78,5 +78,5 @@ func main() {
 	http.DefaultServeMux.HandleFunc("/s3g/health/live", func(w http.ResponseWriter, r *http.Request) {
 		zapLogger.Info("feeling healthy")
 	})
-	http.ListenAndServe(":8082", http.DefaultServeMux)
+	http.ListenAndServe(config.HTTPListenAddr, http.DefaultServeMux)
 }
