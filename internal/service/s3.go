@@ -123,16 +123,24 @@ func NewMinioImplementation(
 	minioClient *minio.Client,
 	bucketName string,
 ) (S3ImageObjectService, error) {
-	if err := minioClient.MakeBucket(
-		context.Background(),
-		bucketName,
-		minio.MakeBucketOptions{},
-	); err != nil {
-		return nil, fmt.Errorf(
-			"failed to create bucket %s: %w",
+
+	exists, err := minioClient.BucketExists(context.Background(), bucketName)
+	if err != nil {
+		return nil, fmt.Errorf("could not check if bucket exists")
+	}
+
+	if !exists {
+		if err := minioClient.MakeBucket(
+			context.Background(),
 			bucketName,
-			err,
-		)
+			minio.MakeBucketOptions{},
+		); err != nil {
+			return nil, fmt.Errorf(
+				"failed to create bucket %s: %w",
+				bucketName,
+				err,
+			)
+		}
 	}
 
 	return minioImplementation{
