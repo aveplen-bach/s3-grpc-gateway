@@ -1,19 +1,12 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"net"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 
 	"github.com/aveplen-bach/s3/internal/config"
 	"github.com/aveplen-bach/s3/internal/service"
@@ -69,7 +62,6 @@ func main() {
 	server := grpc.NewServer(
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(
-				grpc_prometheus.UnaryServerInterceptor,
 				grpc_zap.UnaryServerInterceptor(zapLogger),
 			),
 		),
@@ -81,36 +73,23 @@ func main() {
 	// ============================ health live ===============================
 	router := gin.Default()
 	router.GET("/s3g/health/live", func(c *gin.Context) {
+		zapLogger.Info("feeling healty")
+		c.Status(http.StatusOK)
+	})
+	router.GET("/", func(c *gin.Context) {
+		zapLogger.Info("feeling healty")
 		c.Status(http.StatusOK)
 	})
 
 	// =============================== start ==================================
-	if err := server.Serve(grpcConn); err != nil {
-		zapLogger.Fatal("grpc server failed", zap.Error(err))
-	}
-
-	srv := &http.Server{
-		Addr:    ":8082",
-		Handler: router,
-	}
-
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
-			zapLogger.Info("listening "+srv.Addr, zap.Error(err))
+		if err := server.Serve(grpcConn); err != nil {
+			zapLogger.Fatal("grpc server failed", zap.Error(err))
 		}
 	}()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	zapLogger.Info("shutting down server...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		zapLogger.Fatal("server forced to shutdown: ", zap.Error(err))
-	}
-
-	zapLogger.Info("server exiting")
+	http.DefaultServeMux.HandleFunc("/s3g/health/live", func(w http.ResponseWriter, r *http.Request) {
+		zapLogger.Info("feeling healthy")
+	})
+	http.ListenAndServe(":8082", http.DefaultServeMux)
 }
