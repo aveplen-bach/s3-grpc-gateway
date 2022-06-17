@@ -75,6 +75,7 @@ func main() {
 		}
 	}()
 
+	zapLogger.Info("health check on " + config.HTTPListenAddr)
 	http.DefaultServeMux.HandleFunc("/s3g/health/live", func(w http.ResponseWriter, r *http.Request) {
 		zapLogger.Info("feeling healthy")
 	})

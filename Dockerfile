@@ -15,6 +15,7 @@ RUN CGO_ENABLED=0 go build -o /bin/s3imageapi /go/src/github.com/aveplen-bach/s3
 
 FROM alpine:3.15.4 as runtime
 
+RUN apk add curl
 COPY --from=builder /bin/s3imageapi /bin/s3imageapi
 
 ENTRYPOINT [ "/bin/s3imageapi" ]
