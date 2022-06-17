@@ -4,7 +4,6 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 
@@ -70,18 +69,6 @@ func main() {
 	grpcService := transport.New(minioService)
 	s3file.RegisterS3GatewayServer(server, grpcService)
 
-	// ============================ health live ===============================
-	router := gin.Default()
-	router.GET("/s3g/health/live", func(c *gin.Context) {
-		zapLogger.Info("feeling healty")
-		c.Status(http.StatusOK)
-	})
-	router.GET("/", func(c *gin.Context) {
-		zapLogger.Info("feeling healty")
-		c.Status(http.StatusOK)
-	})
-
-	// =============================== start ==================================
 	go func() {
 		if err := server.Serve(grpcConn); err != nil {
 			zapLogger.Fatal("grpc server failed", zap.Error(err))
