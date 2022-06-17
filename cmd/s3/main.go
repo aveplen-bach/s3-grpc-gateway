@@ -86,7 +86,7 @@ func main() {
 
 	// =============================== start ==================================
 	if err := server.Serve(grpcConn); err != nil {
-		zapLogger.Fatal("server failed", zap.Error(err))
+		zapLogger.Fatal("grpc server failed", zap.Error(err))
 	}
 
 	srv := &http.Server{
